@@ -156,10 +156,10 @@ const vendas = {
           <tbody>${lista.length ? lista.map((p) => `
             <tr class="${p.situacao === 'Atrasado' ? 'linha-atrasada' : ''}">
               <td class="principal-cel"><strong>Parcela ${p.numero}/${v.total_parcelas}</strong>${p.observacoes ? `<small>${esc(p.observacoes)}</small>` : ''}</td>
-              <td data-rotulo="Valor" class="num">${esc(moeda(p.valor))}${p.status === 'Pago' && p.valor_pago != null && Math.abs(p.valor_pago - p.valor) > 0.005 ? `<br><small class="nota" style="margin:0">pago ${esc(moeda(p.valor_pago))}</small>` : ''}</td>
+              <td data-rotulo="Valor" class="num"><span class="pilha">${esc(moeda(p.valor))}${p.status === 'Pago' && p.valor_pago != null && Math.abs(p.valor_pago - p.valor) > 0.005 ? `<small class="nota">pago ${esc(moeda(p.valor_pago))}</small>` : ''}</span></td>
               <td data-rotulo="Vencimento" class="num">${esc(dataBr(p.vencimento))}</td>
               <td data-rotulo="Situação">${pilula(p.situacao, p.situacao === 'Atrasado' ? `Atrasado ${p.dias_atraso}d` : p.situacao)}</td>
-              <td data-rotulo="Pagamento" class="num">${p.status === 'Pago' ? `${esc(dataBr(p.data_pagamento))}<br><small class="nota" style="margin:0">${esc(p.forma_pagamento)}</small>` : '—'}</td>
+              <td data-rotulo="Pagamento" class="num">${p.status === 'Pago' ? `<span class="pilha">${esc(dataBr(p.data_pagamento))}<small class="nota">${esc(p.forma_pagamento)}</small></span>` : '—'}</td>
               <td class="acoes">${parcelas.botoesLinha(p)}</td>
             </tr>`).join('') : '<tr><td colspan="6" class="vazio">Nenhuma parcela cadastrada.</td></tr>'}
           </tbody>

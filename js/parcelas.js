@@ -91,10 +91,10 @@ const parcelas = {
     return `<tr class="${p.situacao === 'Atrasado' ? 'linha-atrasada' : ''}" data-id="${esc(p.id)}">
       <td class="principal-cel"><strong><a href="#/vendas/${esc(p.venda_id)}">${esc(p.cliente_nome)}</a></strong><small>${esc(p.imovel)}</small></td>
       <td data-rotulo="Parcela" class="num">${esc(total)}</td>
-      <td data-rotulo="Valor" class="num">${esc(moeda(p.valor))}${p.status === 'Pago' && p.valor_pago != null && Math.abs(p.valor_pago - p.valor) > 0.005 ? `<br><small class="nota" style="margin:0">pago ${esc(moeda(p.valor_pago))}</small>` : ''}</td>
+      <td data-rotulo="Valor" class="num"><span class="pilha">${esc(moeda(p.valor))}${p.status === 'Pago' && p.valor_pago != null && Math.abs(p.valor_pago - p.valor) > 0.005 ? `<small class="nota">pago ${esc(moeda(p.valor_pago))}</small>` : ''}</span></td>
       <td data-rotulo="Vencimento" class="num">${esc(dataBr(p.vencimento))}</td>
       <td data-rotulo="Situação">${pilula(p.situacao, p.situacao === 'Atrasado' ? `Atrasado ${p.dias_atraso}d` : p.situacao)}</td>
-      <td data-rotulo="Pagamento" class="num">${p.status === 'Pago' ? `${esc(dataBr(p.data_pagamento))}<br><small class="nota" style="margin:0">${esc(p.forma_pagamento)}</small>` : '—'}</td>
+      <td data-rotulo="Pagamento" class="num">${p.status === 'Pago' ? `<span class="pilha">${esc(dataBr(p.data_pagamento))}<small class="nota">${esc(p.forma_pagamento)}</small></span>` : '—'}</td>
       <td class="acoes">${this.botoesLinha(p)}</td>
     </tr>`;
   },

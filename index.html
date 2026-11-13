@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=2">
+  <link rel="stylesheet" href="css/styles.css?v=6">
   <script src="js/theme.js"></script>
 </head>
 <body>
@@ -46,7 +46,9 @@
     <aside class="menu" aria-label="Menu principal">
       <div class="menu-logo">
         <!-- Logo branca com fundo transparente (assets/logo-habitar.png). -->
-        <img src="assets/logo-habitar.png" alt="Habitar Imóveis">
+        <img class="logo-completa" src="assets/logo-habitar.png" alt="Habitar Imóveis">
+        <!-- Só o símbolo dos prédios, usado no menu estreito do iPad. -->
+        <img class="logo-simbolo" src="assets/logo-simbolo.png" alt="Habitar Imóveis">
       </div>
       <nav class="menu-itens">
         <a href="#/painel" data-rota="painel" class="menu-item">
@@ -134,8 +136,8 @@
   <script src="js/utils.js"></script>
   <script src="js/api.js"></script>
   <script src="js/dashboard.js"></script>
-  <script src="js/vendas.js"></script>
-  <script src="js/parcelas.js"></script>
+  <script src="js/vendas.js?v=2"></script>
+  <script src="js/parcelas.js?v=2"></script>
   <script src="js/historico.js"></script>
   <script src="js/app.js"></script>
 </body>
