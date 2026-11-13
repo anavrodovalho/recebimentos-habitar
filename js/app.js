@@ -4,12 +4,19 @@
  * Os módulos painel/vendas/parcelas/historico renderizam dentro das <section id="vista-*">.
  */
 
-const TITULOS = { painel: 'Painel', vendas: 'Vendas', venda: 'Detalhe da venda', parcelas: 'Parcelas', historico: 'Histórico' };
+const TITULOS = {
+  painel: 'Painel', vendas: 'Vendas', venda: 'Detalhe da venda', parcelas: 'Parcelas',
+  pagamentos: 'Pagamentos', pagamento: 'Detalhe do pagamento',
+  emprestimos: 'Empréstimos', emprestimo: 'Detalhe do empréstimo', historico: 'Histórico',
+};
+// Rota de lista → rota de detalhe e tipo de registro (pagamentos e empréstimos usam contas.js).
+const ROTAS_DETALHE = { vendas: 'venda', pagamentos: 'pagamento', emprestimos: 'emprestimo' };
+const ROTA_LISTA = { venda: 'vendas', pagamento: 'pagamentos', emprestimo: 'emprestimos' };
 
 /** Cache dos dados vindos da API. Cada escrita chama dados.invalidar(). */
 const dados = {
-  dashboard: null, vendas: null, parcelas: null, log: null, hoje: hojeIso(),
-  invalidar() { this.dashboard = null; this.vendas = null; this.parcelas = null; this.log = null; },
+  dashboard: null, vendas: null, parcelas: null, log: null, contratos: {}, hoje: hojeIso(),
+  invalidar() { this.dashboard = null; this.vendas = null; this.parcelas = null; this.log = null; this.contratos = {}; },
   async carregarDashboard(forcar) {
     if (!this.dashboard || forcar) { this.dashboard = await api('getDashboard'); this.hoje = this.dashboard.hoje; }
     return this.dashboard;
@@ -21,6 +28,11 @@ const dados = {
   async carregarParcelas(forcar) {
     if (!this.parcelas || forcar) { const r = await api('listParcelas'); this.parcelas = r.parcelas; this.hoje = r.hoje; }
     return this.parcelas;
+  },
+  /** Pagamentos ou empréstimos (tipo = 'pagamento' | 'emprestimo'). */
+  async carregarContratos(tipo, forcar) {
+    if (!this.contratos[tipo] || forcar) { const r = await api('listContratos', { tipo }); this.contratos[tipo] = r.registros; this.hoje = r.hoje; }
+    return this.contratos[tipo];
   },
   async carregarLog(forcar) {
     if (!this.log || forcar) this.log = await api('listLog', { limite: 1000 });
@@ -112,10 +124,10 @@ const app = {
     let rota = partes[0] || 'painel';
     let parametro = partes[1] || null;
     if (!TITULOS[rota]) { rota = 'painel'; parametro = null; }
-    if (rota === 'vendas' && parametro) rota = 'venda';
+    if (ROTAS_DETALHE[rota] && parametro) rota = ROTAS_DETALHE[rota];
 
     qa('.vista').forEach((v) => { v.hidden = true; });
-    qa('[data-rota]').forEach((a) => a.classList.toggle('ativo', a.dataset.rota === (rota === 'venda' ? 'vendas' : rota)));
+    qa('[data-rota]').forEach((a) => a.classList.toggle('ativo', a.dataset.rota === (ROTA_LISTA[rota] || rota)));
     el('topo-titulo').textContent = TITULOS[rota];
     document.title = `${TITULOS[rota]} · Recebimentos Habitar`;
     const vista = el(`vista-${rota}`);
@@ -128,6 +140,8 @@ const app = {
       else if (rota === 'vendas') await vendas.mostrar();
       else if (rota === 'venda') await vendas.mostrarDetalhe(parametro);
       else if (rota === 'parcelas') await parcelas.mostrar();
+      else if (rota === 'pagamentos' || rota === 'emprestimos') await contas.mostrar(rota === 'pagamentos' ? 'pagamento' : 'emprestimo');
+      else if (rota === 'pagamento' || rota === 'emprestimo') await contas.mostrarDetalhe(rota, parametro);
       else if (rota === 'historico') await historico.mostrar();
     } catch (erro) {
       if (erro.codigo !== 'SESSAO') {

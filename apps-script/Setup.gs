@@ -32,7 +32,7 @@ function setupDatabase() {
     throw new Error('O banco já foi configurado: a aba ' + ABA_VENDAS + ' existe. Nada foi alterado.');
   }
 
-  [ABA_VENDAS, ABA_PARCELAS, ABA_USUARIOS, ABA_LOG].forEach(function (nome) { criarAbaDb_(ss, nome); });
+  [ABA_VENDAS, ABA_PARCELAS, ABA_USUARIOS, ABA_LOG, ABA_PAGAMENTOS, ABA_EMPRESTIMOS].forEach(function (nome) { criarAbaDb_(ss, nome); });
 
   var migracao = migrarDadosAntigos_(ss);
 

@@ -127,12 +127,21 @@ function mascaraCpf(valor) {
  * Usa o DDD + número do cliente; devolve '' se o telefone estiver incompleto.
  */
 function linkWhatsApp(parcela) {
+  if (parcela.tipo === 'pagamento') return ''; // conta nossa: não há quem cobrar
   const digitos = String(parcela.cliente_telefone || '').replace(/\D/g, '');
   if (digitos.length < 10) return '';
   const total = parcela.total_parcelas_venda || parcela.total_parcelas || '';
   const numero = total ? `${parcela.numero}/${total}` : String(parcela.numero);
   const primeiroNome = String(parcela.cliente_nome || '').trim().split(/\s+/)[0] || '';
   const vencida = parcela.situacao === 'Atrasado';
+  if (parcela.tipo === 'emprestimo') {
+    const textoEmp = `Olá, ${primeiroNome}! Tudo bem? ` +
+      (vencida
+        ? `Passando para lembrar que a parcela ${numero} do empréstimo, no valor de ${moeda(parcela.valor)}, venceu em ${dataBr(parcela.vencimento)}. `
+        : `Passando para lembrar da parcela ${numero} do empréstimo, no valor de ${moeda(parcela.valor)}, com vencimento em ${dataBr(parcela.vencimento)}. `) +
+      'Se já tiver feito o pagamento, pode desconsiderar. Obrigado!';
+    return `https://wa.me/55${digitos}?text=${encodeURIComponent(textoEmp)}`;
+  }
   const texto = `Olá, ${primeiroNome}! Tudo bem? Aqui é da Habitar Imóveis. ` +
     (vencida
       ? `Passando para lembrar que a parcela ${numero} da entrada do imóvel ${parcela.imovel}, no valor de ${moeda(parcela.valor)}, venceu em ${dataBr(parcela.vencimento)}. `

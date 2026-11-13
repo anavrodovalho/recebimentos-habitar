@@ -20,6 +20,15 @@ function cabecalhos_(nome) {
     ];
     case ABA_USUARIOS: return ['usuario', 'nome', 'senha_hash', 'perfil', 'ativo'];
     case ABA_LOG: return ['data_hora', 'usuario', 'acao', 'entidade', 'registro_id', 'resumo_alteracao'];
+    case ABA_PAGAMENTOS: return [
+      'id', 'favorecido', 'descricao', 'categoria', 'valor_total', 'num_parcelas', 'primeiro_vencimento',
+      'periodicidade', 'documento', 'observacoes', 'ativo', 'criado_em', 'criado_por', 'atualizado_em', 'atualizado_por'
+    ];
+    case ABA_EMPRESTIMOS: return [
+      'id', 'credor', 'devedor_nome', 'devedor_telefone', 'devedor_cpf', 'valor_emprestado', 'data_emprestimo',
+      'valor_a_receber', 'num_parcelas', 'primeiro_vencimento', 'periodicidade', 'observacoes',
+      'ativo', 'criado_em', 'criado_por', 'atualizado_em', 'atualizado_por'
+    ];
     default: throw new Error('Aba desconhecida: ' + nome);
   }
 }
@@ -32,12 +41,20 @@ function colunasTexto_(nome) {
     case ABA_PARCELAS: return ['id', 'venda_id', 'vencimento', 'data_pagamento', 'criado_em', 'atualizado_em'];
     case ABA_USUARIOS: return ['usuario', 'senha_hash'];
     case ABA_LOG: return ['data_hora', 'registro_id'];
+    case ABA_PAGAMENTOS: return ['id', 'primeiro_vencimento', 'documento', 'criado_em', 'atualizado_em'];
+    case ABA_EMPRESTIMOS: return ['id', 'devedor_telefone', 'devedor_cpf', 'data_emprestimo', 'primeiro_vencimento', 'criado_em', 'atualizado_em'];
     default: return [];
   }
 }
 
 function aba_(nome) {
-  var aba = planilha_().getSheetByName(nome);
+  var ss = planilha_();
+  var aba = ss.getSheetByName(nome);
+  // As abas de pagamentos e empréstimos vieram depois da instalação: são criadas
+  // sozinhas no primeiro uso, sem precisar rodar nada no editor.
+  if (!aba && (nome === ABA_PAGAMENTOS || nome === ABA_EMPRESTIMOS)) {
+    try { aba = criarAbaDb_(ss, nome); } catch (e) { aba = ss.getSheetByName(nome); } // outra pessoa criou ao mesmo tempo
+  }
   if (!aba) falha_('A aba ' + nome + ' não existe. Rode setupDatabase() no editor do Apps Script.');
   return aba;
 }

@@ -1,6 +1,6 @@
 # Recebimentos Habitar
 
-Sistema web para controlar os recebimentos a prazo dos clientes da Habitar Imóveis: entradas pagas em data futura e entradas parceladas. Usado pela Ana Laura e pela Adriana, inclusive pelo celular.
+Sistema web para controlar os recebimentos a prazo dos clientes da Habitar Imóveis (entradas pagas em data futura e entradas parceladas), as contas que a Habitar tem a pagar e os empréstimos feitos pelo Nizar, pela Adriana ou pela Habitar que têm data para receber. Usado pela Ana Laura e pela Adriana, inclusive pelo celular.
 
 - **Banco de dados:** planilha Google `Controle_Recebimentos_Habitar` (abas `db_*`). Ninguém edita a planilha direto.
 - **API:** Google Apps Script vinculado à planilha, publicado como App da Web (`apps-script/`).
@@ -13,9 +13,11 @@ Este repositório é público e **não contém nenhum dado de cliente, senha ou 
 | Camada | Onde fica | O que faz |
 |---|---|---|
 | `db_vendas` | planilha | uma linha por venda (cliente, imóvel, entrada, nº de parcelas…) |
-| `db_parcelas` | planilha | uma linha por parcela (valor, vencimento, status, pagamento) |
+| `db_parcelas` | planilha | uma linha por parcela (valor, vencimento, status, pagamento). A coluna `venda_id` guarda o código do dono: `V0001` venda, `PG0001` pagamento, `EM0001` empréstimo |
 | `db_usuarios` | planilha | logins com senha em hash (salt + SHA-256) |
 | `db_log` | planilha | quem fez o quê e quando |
+| `db_pagamentos` | planilha | contas a pagar (favorecido, descrição, categoria, valor, parcelas) |
+| `db_emprestimos` | planilha | empréstimos (quem emprestou, para quem, valor emprestado, valor a receber) |
 | `apps-script/*.gs` | Apps Script | login com token (12 h), cálculos, validação, LockService |
 | `index.html`, `js/`, `css/` | GitHub Pages | Painel, Vendas, Parcelas, Histórico, temas claro/escuro |
 
@@ -27,12 +29,19 @@ Regras de cálculo (sempre no backend, nunca por fórmula):
 - **Edição de venda com parcelas pagas:** as pagas nunca mudam; só as em aberto são recalculadas, com confirmação.
 - Datas gravadas como texto `yyyy-mm-dd` no fuso `America/Sao_Paulo`; valores como número.
 
+## Pagamentos e empréstimos
+
+- **Pagamentos:** o que a Habitar tem a pagar (fornecedor, comissão, imposto…). Funcionam como as vendas: valor total, nº de parcelas, prévia editável, baixa ("Registrar pagamento"), estorno e histórico. Não têm botão de WhatsApp.
+- **Empréstimos:** valores emprestados pelo Nizar, pela Adriana ou pela Habitar. O valor a receber começa igual ao emprestado e pode ser maior se houver juros. Têm cobrança pelo WhatsApp com mensagem própria.
+- O Painel ganhou uma linha com o total a pagar, pagamentos em atraso, empréstimos a receber e empréstimos em atraso. As parcelas atrasadas ou que vencem em até 7 dias entram em "Atenção hoje" com a etiqueta do tipo.
+- As abas `db_pagamentos` e `db_emprestimos` são criadas sozinhas no primeiro uso. Basta colar o código novo e publicar uma nova versão.
+
 ## Publicação: passo a passo
 
 ### 1. Apps Script
 
 1. Abra a planilha `Controle_Recebimentos_Habitar` e vá em **Extensões → Apps Script**.
-2. No editor, crie um arquivo para cada `.gs` da pasta `apps-script/` com o mesmo nome (`Code`, `Auth`, `Db`, `Parcelas`, `Vendas`, `Setup`) e cole o conteúdo. Apague o `Code.gs` vazio padrão antes de colar o novo.
+2. No editor, crie um arquivo para cada `.gs` da pasta `apps-script/` com o mesmo nome (`Code`, `Auth`, `Db`, `Parcelas`, `Vendas`, `Contratos`, `Setup`) e cole o conteúdo. Apague o `Code.gs` vazio padrão antes de colar o novo.
 3. Em **Configurações do projeto** (engrenagem), marque **Mostrar o arquivo de manifesto "appsscript.json"** e cole o conteúdo de `apps-script/appsscript.json`. Isso define o fuso `America/Sao_Paulo` e o acesso do App da Web.
 4. Salve tudo (Ctrl+S).
 
@@ -98,7 +107,8 @@ A URL continua a mesma. **Não use "Nova implantação"**, porque ela cria outra
 Não é preciso o Apps Script para testar o código:
 
 ```bash
-node tests/testes-backend.js          # regras de negócio e API num simulador do Apps Script (25 testes)
+node tests/testes-backend.js          # vendas, parcelas, login e API num simulador do Apps Script (25 testes)
+node tests/testes-contratos.js        # pagamentos e empréstimos (10 testes)
 AGORA="2026-11-13T15:00:00-03:00" node tests/servidor-dev.js   # site em http://localhost:8787 (ana / adriana, senha teste123)
 ```
 
@@ -107,10 +117,10 @@ O servidor de testes serve o site e responde `/api` com o backend simulado em me
 ## Estrutura
 
 ```
-apps-script/   Code.gs (roteamento e utilitários) · Auth.gs · Db.gs · Parcelas.gs · Vendas.gs · Setup.gs · appsscript.json
+apps-script/   Code.gs (roteamento e utilitários) · Auth.gs · Db.gs · Parcelas.gs · Vendas.gs · Contratos.gs · Setup.gs · appsscript.json
 index.html     login + aplicação (menu lateral; no celular vira menu inferior)
 css/styles.css temas claro/escuro por variáveis CSS
-js/            config.js · utils.js · api.js · theme.js · app.js · dashboard.js · vendas.js · parcelas.js · historico.js
+js/            config.js · utils.js · api.js · theme.js · app.js · dashboard.js · vendas.js · parcelas.js · previa.js · contas.js · historico.js
 assets/        logo-habitar.png (branca, fundo transparente), ícones
 tests/         simulador.js · testes-backend.js · servidor-dev.js
 ```
@@ -132,5 +142,8 @@ Um único `doPost` com `{ action, token, payload }`, corpo enviado como `text/pl
 | `baixarParcela` | `{id, data_pagamento, valor_pago, forma_pagamento}` | |
 | `estornarParcela` / `deleteParcela` | `{id}` | paga não pode ser excluída: estorne antes |
 | `listLog` | `{limite}` | histórico, mais recente primeiro |
+| `listContratos` / `getContrato` | `{tipo}` / `{tipo, id}` | `tipo` = `pagamento` ou `emprestimo` |
+| `saveContrato` | registro + `parcelas[]` (+ `confirmarRecalculo`) | cria ou edita pagamento/empréstimo |
+| `deleteContrato` | `{tipo, id}` | exclusão lógica do registro e das parcelas |
 
 Toda ação de escrita roda dentro do `LockService`, então duas pessoas podem salvar ao mesmo tempo sem corromper a planilha.

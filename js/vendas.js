@@ -230,85 +230,15 @@ const vendas = {
       </form>`, { larga: true });
 
     const f = el('form-venda');
-    let previa = editando ? v.parcelas.map((p) => ({ id: p.id, numero: p.numero, valor: p.valor, vencimento: p.vencimento, status: p.status, observacoes: p.observacoes })) : [];
-
-    const renderPrevia = () => {
-      const entrada = lerMoeda(f.valor_entrada.value) || 0;
-      const soma = centavos(previa.reduce((s, p) => s + (Number(p.valor) || 0), 0));
-      const bate = Math.abs(soma - entrada) < 0.005;
-      const personalizada = f.periodicidade.value === 'Personalizada';
-      el('previa').innerHTML = previa.length ? `
-        <div class="tabela-rolagem"><table class="tabela previa-tabela">
-          <thead><tr><th>Nº</th><th>Valor (R$)</th><th>Vencimento</th><th>Status</th></tr></thead>
-          <tbody>${previa.map((p, i) => p.status === 'Pago' ? `
-            <tr><td class="num">${p.numero}</td><td class="num">${esc(moeda(p.valor))}</td><td class="num">${esc(dataBr(p.vencimento))}</td><td>${pilula('Pago')}</td></tr>` : `
-            <tr>
-              <td class="num">${p.numero}</td>
-              <td><input class="campo campo-moeda" data-previa="valor" data-i="${i}" inputmode="decimal" value="${esc(moedaCampo(p.valor))}"></td>
-              <td><input class="campo" data-previa="vencimento" data-i="${i}" type="date" value="${esc(p.vencimento)}" ${personalizada && !p.vencimento ? 'placeholder="preencha"' : ''}></td>
-              <td>${pilula('A pagar')}</td>
-            </tr>`).join('')}
-          </tbody>
-        </table></div>
-        <div class="previa-total ${bate ? 'ok' : 'erro'}">
-          <span>Soma das parcelas: <strong>${esc(moeda(soma))}</strong> · entrada: <strong>${esc(moeda(entrada))}</strong></span>
-          <span>${bate ? '✓ Parcelas batem com a entrada' : '⚠ Parcelas não batem com o valor da entrada'}</span>
-        </div>` : `<p class="nota">Preencha o valor da entrada, o nº de parcelas e o 1º vencimento para ver a prévia.</p>`;
-    };
-
-    const gerar = () => {
-      const entrada = lerMoeda(f.valor_entrada.value);
-      const n = Number(f.num_parcelas.value);
-      const primeiro = f.primeiro_vencimento.value;
-      const periodicidade = f.periodicidade.value;
-      if (!entrada || entrada <= 0 || !Number.isInteger(n) || n < 1 || (!dataValida(primeiro) && periodicidade !== 'Personalizada')) { renderPrevia(); return; }
-      const abertasQtd = Math.max(0, n - pagas.length);
-      const somaPagas = centavos(pagas.reduce((s, p) => s + p.valor, 0));
-      const restante = centavos(entrada - somaPagas);
-      let abertas = [];
-      if (abertasQtd > 0 && restante > 0) {
-        const inicio = periodicidade === 'Quinzenal' ? somarDias(primeiro || hoje, 15 * pagas.length)
-          : periodicidade === 'Mensal' ? somarMeses(primeiro || hoje, pagas.length) : '';
-        abertas = gerarParcelas(restante, abertasQtd, inicio, periodicidade, pagas.length).map((p, i) => {
-          if (periodicidade === 'Personalizada') p.vencimento = pagas.length === 0 && i === 0 && dataValida(primeiro) ? primeiro : '';
-          return p;
-        });
-      }
-      previa = pagas.map((p) => ({ id: p.id, numero: p.numero, valor: p.valor, vencimento: p.vencimento, status: 'Pago' })).concat(abertas);
-      renderPrevia();
-    };
+    const previa = ligarPreviaParcelas(f, { campoValor: 'valor_entrada', alvo: el('previa'), rotulo: 'valor da entrada', parcelas: editando ? v.parcelas : [] });
 
     // Máscaras e regras de formulário
     f.cliente_telefone.addEventListener('input', (e) => { e.target.value = mascaraTelefone(e.target.value); });
     f.cliente_cpf.addEventListener('input', (e) => { e.target.value = mascaraCpf(e.target.value); });
     f.tipo_condicao.addEventListener('change', () => {
       if (f.tipo_condicao.value === 'Entrada a prazo') { f.num_parcelas.value = 1; }
-      gerar();
+      previa.gerar();
     });
-    // Regera a prévia ao mudar os campos que a definem (no change e, com atraso, ao digitar).
-    const gerarComAtraso = debounce(gerar, 400);
-    ['valor_entrada', 'num_parcelas', 'primeiro_vencimento', 'periodicidade'].forEach((campo) => {
-      f[campo].addEventListener('change', gerar);
-      f[campo].addEventListener('input', gerarComAtraso);
-    });
-    f.querySelector('[data-acao="previa-gerar"]').addEventListener('click', gerar);
-    el('previa').addEventListener('input', (e) => {
-      const inp = e.target.closest('[data-previa]');
-      if (!inp) return;
-      const p = previa[Number(inp.dataset.i)];
-      if (inp.dataset.previa === 'valor') p.valor = lerMoeda(inp.value) || 0;
-      else p.vencimento = inp.value;
-      // Atualiza só a linha de total, sem redesenhar os inputs (para não perder o foco).
-      const entrada = lerMoeda(f.valor_entrada.value) || 0;
-      const soma = centavos(previa.reduce((s, x) => s + (Number(x.valor) || 0), 0));
-      const total = el('previa').querySelector('.previa-total');
-      if (total) {
-        const bate = Math.abs(soma - entrada) < 0.005;
-        total.className = `previa-total ${bate ? 'ok' : 'erro'}`;
-        total.innerHTML = `<span>Soma das parcelas: <strong>${esc(moeda(soma))}</strong> · entrada: <strong>${esc(moeda(entrada))}</strong></span><span>${bate ? '✓ Parcelas batem com a entrada' : '⚠ Parcelas não batem com o valor da entrada'}</span>`;
-      }
-    });
-    if (editando) renderPrevia(); else gerar();
 
     f.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -336,19 +266,11 @@ const vendas = {
       if (campos.valor_imovel !== null && (!Number.isFinite(campos.valor_imovel) || campos.valor_imovel < 0)) return falhar('valor_imovel', 'Valor do imóvel inválido.');
       if (!Number.isInteger(campos.num_parcelas) || campos.num_parcelas < 1) return falhar('num_parcelas', 'O nº de parcelas precisa ser um inteiro a partir de 1.');
       if (!dataValida(campos.primeiro_vencimento)) return falhar('primeiro_vencimento', 'Informe o 1º vencimento.');
-      if (!previa.length) return falhar(null, 'Gere a prévia das parcelas antes de salvar.');
-      for (const p of previa) {
-        if (p.status === 'Pago') continue;
-        if (!(Number(p.valor) > 0)) return falhar(null, `A parcela ${p.numero} precisa ter valor maior que zero.`);
-        if (!dataValida(p.vencimento)) return falhar(null, `Informe o vencimento da parcela ${p.numero}.`);
-      }
-      const soma = centavos(previa.reduce((s, p) => s + Number(p.valor), 0));
-      if (Math.abs(soma - campos.valor_entrada) >= 0.005) {
-        const seguir = await confirmar('Parcelas não batem', `As parcelas somam <strong>${esc(moeda(soma))}</strong> e a entrada é <strong>${esc(moeda(campos.valor_entrada))}</strong>. Salvar mesmo assim? A venda ficará marcada como "Conferir".`, { ok: 'Salvar assim mesmo' });
-        if (!seguir) return;
-      }
+      const problema = await conferirPrevia(previa.obter(), campos.valor_entrada, 'valor da entrada', 'A venda');
+      if (problema === 'cancelado') return;
+      if (problema) return falhar(null, problema);
       erro.hidden = true;
-      campos.parcelas = previa.map((p) => ({ id: p.id || '', numero: p.numero, valor: Number(p.valor), vencimento: p.vencimento, observacoes: p.observacoes || '' }));
+      campos.parcelas = parcelasParaEnvio(previa.obter());
       await this.salvar(f, campos, editando);
     });
   },

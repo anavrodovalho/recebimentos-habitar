@@ -36,6 +36,15 @@ function enriquecerParcela_(p, hoje) {
 
 /** Resumo financeiro de uma venda a partir das suas parcelas ativas. */
 function calcularVenda_(v, parcelas, hoje) {
+  return calcularContrato_(v, v.valor_entrada, parcelas, hoje);
+}
+
+/**
+ * Resumo financeiro de qualquer registro com parcelas (venda, pagamento, empréstimo).
+ * `valorTotal` é o valor que as parcelas devem somar (entrada, total a pagar, total a receber).
+ * total_recebido = total quitado (pago ou recebido, conforme o tipo).
+ */
+function calcularContrato_(v, valorTotal, parcelas, hoje) {
   var r = publico_(v);
   var pagas = parcelas.filter(function (p) { return p.status === 'Pago'; });
   var abertas = parcelas.filter(function (p) { return p.status !== 'Pago'; });
@@ -49,10 +58,15 @@ function calcularVenda_(v, parcelas, hoje) {
   // descontos lançados em valor_pago não distorcerem o que ainda falta receber.
   r.saldo = centavos_(abertas.reduce(function (s, p) { return s + p.valor; }, 0));
   r.soma_parcelas = centavos_(parcelas.reduce(function (s, p) { return s + p.valor; }, 0));
-  r.conferencia_ok = Math.abs(r.soma_parcelas - v.valor_entrada) < 0.005;
+  r.conferencia_ok = Math.abs(r.soma_parcelas - (valorTotal || 0)) < 0.005;
 
   var atrasadas = abertas.filter(function (p) { return situacaoParcela_(p, hoje) === 'Atrasado'; });
   r.parcelas_atrasadas = atrasadas.length;
+  r.valor_atrasado = centavos_(atrasadas.reduce(function (s, p) { return s + p.valor; }, 0));
+  r.vence_30_dias = centavos_(abertas.reduce(function (s, p) {
+    var faltam = p.vencimento ? diasEntre_(hoje, p.vencimento) : -1;
+    return faltam >= 0 && faltam <= 30 ? s + p.valor : s;
+  }, 0));
   r.maior_atraso = atrasadas.reduce(function (m, p) { return Math.max(m, diasAtraso_(p, hoje)); }, 0);
 
   var proximas = abertas.map(function (p) { return p.vencimento; }).filter(Boolean).sort();
@@ -110,6 +124,7 @@ function mapaVendas_(vendas) {
 /** Parcela com os dados da venda (cliente, imóvel, telefone) para as listas. */
 function parcelaComVenda_(p, venda, hoje) {
   var r = enriquecerParcela_(p, hoje);
+  r.tipo = 'venda';
   r.cliente_nome = venda ? venda.cliente_nome : '';
   r.cliente_telefone = venda ? venda.cliente_telefone : '';
   r.imovel = venda ? venda.imovel : '';
@@ -136,9 +151,9 @@ function acaoListParcelas() {
 function acaoGetDashboard() {
   var hoje = hojeIso_();
   var vendas = lerVendas_();
-  var parcelas = lerParcelas_();
+  var todasParcelas = lerParcelas_();
   var mapa = mapaVendas_(vendas);
-  parcelas = parcelas.filter(function (p) { return mapa[p.venda_id]; });
+  var parcelas = todasParcelas.filter(function (p) { return mapa[p.venda_id]; });
 
   var porVenda = {};
   parcelas.forEach(function (p) { (porVenda[p.venda_id] = porVenda[p.venda_id] || []).push(p); });
@@ -172,13 +187,16 @@ function acaoGetDashboard() {
     if (calc.situacao === 'Quitada') cards.vendas_quitadas++; else cards.vendas_em_aberto++;
   });
 
+  // Pagamentos e empréstimos: resumo próprio e entram na lista "Atenção hoje".
+  var contas = resumoContratos_(todasParcelas, hoje, atencao);
+
   // Atrasadas primeiro (mais antigas no topo), depois as que vencem em breve.
   atencao.sort(function (a, b) {
     var pa = a.situacao === 'Atrasado' ? 0 : 1, pb = b.situacao === 'Atrasado' ? 0 : 1;
     return pa - pb || a.vencimento.localeCompare(b.vencimento);
   });
 
-  return { hoje: hoje, cards: cards, previsao: previsaoMensal_(parcelas, hoje), atencao: atencao };
+  return { hoje: hoje, cards: cards, previsao: previsaoMensal_(parcelas, hoje), atencao: atencao, contas: contas };
 }
 
 /** Previsto × recebido por mês de vencimento, do mês atual até 11 meses à frente. */
@@ -234,7 +252,8 @@ function validarPagamento_(dados, valorParcela) {
 /** Cria ou edita uma parcela avulsa. */
 function acaoSaveParcela(dados, usuario) {
   var agora = agoraTexto_();
-  var venda = buscarVenda_(dados.venda_id);
+  // venda_id guarda o código do dono: venda (V…), pagamento (PG…) ou empréstimo (EM…).
+  var venda = buscarReferencia_(dados.venda_id);
   var campos = validarParcelas_([dados])[0];
   var status = texto_(dados.status) === 'Pago' ? 'Pago' : 'A pagar';
   var registro = {

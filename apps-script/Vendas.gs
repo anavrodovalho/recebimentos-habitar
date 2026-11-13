@@ -100,45 +100,10 @@ function acaoSaveVenda(dados, usuario) {
   var resumo = resumoDiferencas_(existente, campos);
 
   if (parcelasNovas) {
-    var atuais = lerParcelas_().filter(function (p) { return p.venda_id === id; });
-    var pagas = atuais.filter(function (p) { return p.status === 'Pago'; });
-    var abertas = atuais.filter(function (p) { return p.status !== 'Pago'; });
-    var idsPagas = {};
-    pagas.forEach(function (p) { idsPagas[p.id] = true; });
-
-    // Parcelas pagas são intocáveis: tiramos da lista qualquer item que aponte para elas.
-    var abertasNovas = parcelasNovas.filter(function (p) { return !idsPagas[p.id]; });
-    var mudou = parcelasMudaram_(abertas, abertasNovas);
-    if (mudou && pagas.length && !booleano_(dados.confirmarRecalculo)) {
-      falha_('Essa venda já tem ' + pagas.length + ' parcela(s) paga(s). Confirme para recalcular só as parcelas em aberto.', 'CONFIRMAR');
-    }
-    if (mudou) {
-      var porId = {};
-      abertas.forEach(function (p) { porId[p.id] = p; });
-      var mantidas = {};
-      var paraInserir = [];
-      abertasNovas.forEach(function (p) {
-        if (p.id && porId[p.id]) {
-          mantidas[p.id] = true;
-          atualizarLinha_(ABA_PARCELAS, porId[p.id]._linha, {
-            numero: p.numero, valor: p.valor, vencimento: p.vencimento,
-            observacoes: p.observacoes || porId[p.id].observacoes,
-            atualizado_em: agora, atualizado_por: usuario.nome
-          });
-        } else {
-          paraInserir.push(p);
-        }
-      });
-      abertas.forEach(function (p) {
-        if (!mantidas[p.id]) atualizarLinha_(ABA_PARCELAS, p._linha, { ativo: false, atualizado_em: agora, atualizado_por: usuario.nome });
-      });
-      if (paraInserir.length) {
-        var prox = Number(proximoId_('P', 5, lerParcelas_(true)).slice(1));
-        inserirLinhas_(ABA_PARCELAS, paraInserir.map(function (p, i) { return novaParcela_(id, p, prox + i, agora, usuario); }));
-      }
-      resumo.push('parcelas em aberto recalculadas (' + abertasNovas.length + ' em aberto, ' + pagas.length + ' pagas mantidas)');
-    }
-    atualizacao.num_parcelas = pagas.length + abertasNovas.length;
+    // Parcelas pagas são intocáveis; com pagas, o recálculo exige confirmação (code CONFIRMAR).
+    var sinc = sincronizarParcelas_(id, parcelasNovas, booleano_(dados.confirmarRecalculo), agora, usuario);
+    if (sinc.mudou) resumo.push('parcelas em aberto recalculadas (' + sinc.abertas + ' em aberto, ' + sinc.pagas + ' pagas mantidas)');
+    atualizacao.num_parcelas = sinc.pagas + sinc.abertas;
   }
 
   atualizarLinha_(ABA_VENDAS, existente._linha, atualizacao);

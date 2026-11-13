@@ -6,7 +6,13 @@
 const ROTULO_ACAO = {
   criar: 'Criou', editar: 'Editou', excluir: 'Excluiu', baixa: 'Deu baixa', estorno: 'Estornou', setup: 'Configurou',
 };
-const ROTULO_ENTIDADE = { venda: 'venda', parcela: 'parcela', usuario: 'usuário', banco: 'banco' };
+const ROTULO_ENTIDADE = { venda: 'venda', parcela: 'parcela', usuario: 'usuário', banco: 'banco', pagamento: 'pagamento', emprestimo: 'empréstimo' };
+// Prefixo do código → rota do detalhe.
+const ROTA_POR_PREFIXO = [['PG', 'pagamentos'], ['EM', 'emprestimos'], ['V', 'vendas']];
+function linkRegistro(id) {
+  const achado = ROTA_POR_PREFIXO.find(([pre]) => new RegExp('^' + pre + '\\d+$').test(id || ''));
+  return achado ? `<a href="#/${achado[1]}/${esc(id)}">${esc(id)}</a>` : esc(id);
+}
 
 const historico = {
   busca: '',
@@ -47,7 +53,7 @@ const historico = {
             <td data-rotulo="Quando" class="num">${esc(dataHoraBr(l.data_hora))}</td>
             <td data-rotulo="Quem">${esc(l.usuario)}</td>
             <td data-rotulo="O quê"><span class="pilula ${classeAcao(l.acao)}">${esc(ROTULO_ACAO[l.acao] || l.acao)}</span> ${esc(ROTULO_ENTIDADE[l.entidade] || l.entidade)}</td>
-            <td data-rotulo="Registro">${l.entidade === 'venda' && l.registro_id ? `<a href="#/vendas/${esc(l.registro_id)}">${esc(l.registro_id)}</a>` : esc(l.registro_id)}</td>
+            <td data-rotulo="Registro">${linkRegistro(l.registro_id)}</td>
             <td data-rotulo="Detalhes" class="quebra">${esc(l.resumo_alteracao)}</td>
           </tr>`).join('')}
         </tbody>

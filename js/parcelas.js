@@ -124,7 +124,8 @@ const parcelas = {
   },
 
   abrirBaixa(p) {
-    abrirModal(`Dar baixa na parcela ${p.numero}`, `
+    const tituloBaixa = p.tipo === 'pagamento' ? `Registrar pagamento da parcela ${p.numero}` : p.tipo === 'emprestimo' ? `Registrar recebimento da parcela ${p.numero}` : `Dar baixa na parcela ${p.numero}`;
+    abrirModal(tituloBaixa, `
       <form id="form-baixa" novalidate>
         <p class="modal-texto"><strong>${esc(p.cliente_nome || '')}</strong>${p.imovel ? ` · ${esc(p.imovel)}` : ''}<br>
           <span class="nota">Parcela de ${esc(moeda(p.valor))}, vencimento ${esc(dataBr(p.vencimento))}</span></p>
@@ -151,7 +152,7 @@ const parcelas = {
       await executarEscrita(f.querySelector('[type=submit]'), 'baixarParcela', {
         id: p.id, data_pagamento: f.data_pagamento.value, valor_pago: valor,
         forma_pagamento: f.forma_pagamento.value, observacoes: f.observacoes.value,
-      }, `Parcela ${p.numero} baixada: ${moeda(valor)}.`).catch(() => {});
+      }, p.tipo === 'pagamento' ? `Pagamento registrado: ${moeda(valor)}.` : p.tipo === 'emprestimo' ? `Recebimento registrado: ${moeda(valor)}.` : `Parcela ${p.numero} baixada: ${moeda(valor)}.`).catch(() => {});
     });
   },
 

@@ -9,7 +9,7 @@
  *  - Todo cálculo (saldo, situação, atraso) acontece aqui, nunca na planilha.
  *
  * Arquivos: Code.gs (roteamento) · Auth.gs (login) · Db.gs (leitura/escrita)
- *           Vendas.gs · Parcelas.gs (regras de negócio) · Setup.gs (instalação)
+ *           Vendas.gs · Parcelas.gs · Contratos.gs (pagamentos e empréstimos) · Setup.gs (instalação)
  */
 
 // Deixe vazio quando o script estiver vinculado à planilha (Extensões → Apps Script).
@@ -22,6 +22,8 @@ var ABA_VENDAS = 'db_vendas';
 var ABA_PARCELAS = 'db_parcelas';
 var ABA_USUARIOS = 'db_usuarios';
 var ABA_LOG = 'db_log';
+var ABA_PAGAMENTOS = 'db_pagamentos';   // contas que a Habitar tem a pagar
+var ABA_EMPRESTIMOS = 'db_emprestimos'; // valores emprestados a receber
 
 var SESSAO_HORAS = 12;
 var CACHE_MAX_SEGUNDOS = 21600;   // limite do CacheService: 6 horas por gravação
@@ -53,7 +55,12 @@ function acoes_() {
     baixarParcela:   { fn: acaoBaixarParcela, escrita: true },
     estornarParcela: { fn: acaoEstornarParcela, escrita: true },
     deleteParcela:   { fn: acaoDeleteParcela, escrita: true },
-    listLog:         { fn: acaoListLog }
+    listLog:         { fn: acaoListLog },
+    // Pagamentos e empréstimos: payload.tipo = 'pagamento' | 'emprestimo'
+    listContratos:   { fn: acaoListContratos },
+    getContrato:     { fn: acaoGetContrato },
+    saveContrato:    { fn: acaoSaveContrato, escrita: true },
+    deleteContrato:  { fn: acaoDeleteContrato, escrita: true }
   };
 }
 

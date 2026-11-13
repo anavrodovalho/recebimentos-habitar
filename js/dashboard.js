@@ -32,6 +32,7 @@ const painel = {
         ${card('Vendas em aberto', String(c.vendas_em_aberto), 'com saldo a receber')}
         ${card('Vendas quitadas', String(c.vendas_quitadas), 'entrada 100% recebida')}
       </div>
+      ${d.contas ? cardsContas(d.contas) : ''}
       <div class="painel-grade">
         <div class="cartao">
           <div class="cartao-titulo">
@@ -43,7 +44,7 @@ const painel = {
         </div>
         <div class="cartao">
           <div class="cartao-titulo"><h2>Atenção hoje</h2><span class="filtros-ativos">${esc(dataBr(d.hoje))}</span></div>
-          ${d.atencao.length ? `<div class="atencao-lista">${d.atencao.map(itemAtencao).join('')}</div>` : '<p class="vazio">Nenhuma parcela atrasada ou vencendo nos próximos 7 dias. 🎉</p>'}
+          ${d.atencao.length ? `<div class="atencao-lista">${d.atencao.map(itemAtencao).join('')}</div>` : '<p class="vazio">Nada atrasado ou vencendo nos próximos 7 dias. 🎉</p>'}
         </div>
       </div>
       <div id="painel-extras" class="painel-extras">
@@ -87,22 +88,47 @@ function card(rotulo, valor, sub, classe = '') {
   return `<div class="card-numero ${classe}"><span class="rotulo-card">${esc(rotulo)}</span><span class="valor-card">${esc(valor)}</span><span class="sub-card">${esc(sub)}</span></div>`;
 }
 
+/** Linha de cards de pagamentos e empréstimos (só aparece com o Apps Script atualizado). */
+function cardsContas(contas) {
+  const pg = contas.pagamento, em = contas.emprestimo;
+  return `
+    <h2 class="secao-titulo">Pagamentos e empréstimos</h2>
+    <div class="cards-resumo cards-4">
+      ${cardLink('#/pagamentos', 'A pagar', moeda(pg.em_aberto), `${pg.registros_abertos} pagamento(s) em aberto`)}
+      ${cardLink('#/pagamentos', 'Pagamentos em atraso', moeda(pg.em_atraso), `${pg.parcelas_atrasadas} parcela(s) · vence em 30 dias: ${moeda(pg.vence_30_dias)}`, pg.em_atraso > 0 ? 'card-atraso' : '')}
+      ${cardLink('#/emprestimos', 'Empréstimos a receber', moeda(em.em_aberto), `${em.registros_abertos} empréstimo(s) em aberto`)}
+      ${cardLink('#/emprestimos', 'Empréstimos em atraso', moeda(em.em_atraso), `${em.parcelas_atrasadas} parcela(s) · vence em 30 dias: ${moeda(em.vence_30_dias)}`, em.em_atraso > 0 ? 'card-atraso' : '')}
+    </div>`;
+}
+
+function cardLink(href, rotulo, valor, sub, classe = '') {
+  return `<a class="card-numero card-link ${classe}" href="${href}"><span class="rotulo-card">${esc(rotulo)}</span><span class="valor-card">${esc(valor)}</span><span class="sub-card">${esc(sub)}</span></a>`;
+}
+
+// Etiqueta e rota de cada tipo de parcela em "Atenção hoje".
+const TIPO_ATENCAO = {
+  venda: { etiqueta: '', rota: 'vendas', ver: 'Ver venda' },
+  pagamento: { etiqueta: 'A pagar', rota: 'pagamentos', ver: 'Ver pagamento' },
+  emprestimo: { etiqueta: 'Empréstimo', rota: 'emprestimos', ver: 'Ver empréstimo' },
+};
+
 function itemAtencao(p) {
   const atrasada = p.situacao === 'Atrasado';
   const whats = linkWhatsApp(p);
   const total = p.total_parcelas_venda ? `${p.numero}/${p.total_parcelas_venda}` : `${p.numero}`;
+  const tipo = TIPO_ATENCAO[p.tipo] || TIPO_ATENCAO.venda;
   return `
     <div class="atencao-item ${atrasada ? 'at-atrasado' : 'at-breve'}">
       <div>
-        <strong>${esc(p.cliente_nome)}</strong>
+        <strong>${tipo.etiqueta ? `<span class="etiqueta-tipo et-${esc(p.tipo)}">${esc(tipo.etiqueta)}</span> ` : ''}${esc(p.cliente_nome)}</strong>
         <small>${esc(p.imovel)} · parcela ${esc(total)}</small>
         <small style="margin-top:4px">${pilula(p.situacao, atrasada ? `Venceu ${dataBr(p.vencimento)} · ${p.dias_atraso} dia${p.dias_atraso === 1 ? '' : 's'} de atraso` : `Vence ${dataBr(p.vencimento)}`)}</small>
       </div>
       <div class="valor-item">${esc(moeda(p.valor))}</div>
       <div class="botoes-linha">
-        <button class="botao botao-primario botao-pequeno" type="button" data-baixa="${esc(p.id)}">Dar baixa</button>
+        <button class="botao botao-primario botao-pequeno" type="button" data-baixa="${esc(p.id)}">${p.tipo === 'pagamento' ? 'Registrar pagamento' : 'Dar baixa'}</button>
         ${whats ? `<a class="botao botao-whats botao-pequeno" href="${whats}" target="_blank" rel="noopener">Cobrar no WhatsApp</a>` : ''}
-        <a class="botao botao-secundario botao-pequeno" href="#/vendas/${esc(p.venda_id)}">Ver venda</a>
+        <a class="botao botao-secundario botao-pequeno" href="#/${tipo.rota}/${esc(p.venda_id)}">${esc(tipo.ver)}</a>
       </div>
     </div>`;
 }
