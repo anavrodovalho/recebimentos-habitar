@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Recebimentos Habitar</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0D2040">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Recebimentos">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icone-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=1">
+  <script src="js/theme.js"></script>
+</head>
+<body>
+
+  <!-- ───────── Login ───────── -->
+  <main id="tela-login" class="login" hidden>
+    <form id="form-login" class="login-caixa" novalidate>
+      <img class="login-logo" src="assets/logo-habitar.png" alt="Habitar Imóveis">
+      <h1>Controle de recebimentos</h1>
+      <p class="login-sub">Entradas a prazo e parceladas</p>
+      <label class="rotulo">Usuário
+        <input id="login-usuario" class="campo" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      </label>
+      <label class="rotulo">Senha
+        <input id="login-senha" class="campo" type="password" autocomplete="current-password" required>
+      </label>
+      <button id="login-botao" class="botao botao-primario botao-largo" type="submit">Entrar</button>
+      <p id="login-aviso" class="aviso-erro" hidden></p>
+      <button class="botao-fantasma login-tema" type="button" data-acao="alternar-tema" aria-label="Alternar tema">
+        <span class="icone-sol" aria-hidden="true">☀</span><span class="icone-lua" aria-hidden="true">☾</span>
+      </button>
+    </form>
+  </main>
+
+  <!-- ───────── Aplicação ───────── -->
+  <div id="tela-app" class="app" hidden>
+    <aside class="menu" aria-label="Menu principal">
+      <div class="menu-logo">
+        <!-- Logo branca com fundo transparente (assets/logo-habitar.png). -->
+        <img src="assets/logo-habitar.png" alt="Habitar Imóveis">
+      </div>
+      <nav class="menu-itens">
+        <a href="#/painel" data-rota="painel" class="menu-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z"/></svg>
+          <span>Painel</span>
+        </a>
+        <a href="#/vendas" data-rota="vendas" class="menu-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.5 12 3l9 6.5V21H3z"/><path d="M9 21v-7h6v7"/></svg>
+          <span>Vendas</span>
+        </a>
+        <a href="#/parcelas" data-rota="parcelas" class="menu-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
+          <span>Parcelas</span>
+        </a>
+        <a href="#/historico" data-rota="historico" class="menu-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span>Histórico</span>
+        </a>
+      </nav>
+      <div class="menu-rodape">
+        <span class="avatar" id="menu-avatar" aria-hidden="true"></span>
+        <div class="menu-usuario">
+          <strong id="menu-nome"></strong>
+          <button type="button" class="link-claro" data-acao="sair">Sair</button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="principal">
+      <header class="topo">
+        <h1 id="topo-titulo">Painel</h1>
+        <div class="topo-acoes">
+          <button class="botao-icone" type="button" data-acao="atualizar" aria-label="Atualizar dados" title="Atualizar dados">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+          </button>
+          <button class="botao-icone" type="button" data-acao="alternar-tema" aria-label="Alternar tema">
+            <span class="icone-sol" aria-hidden="true">☀</span><span class="icone-lua" aria-hidden="true">☾</span>
+          </button>
+          <span class="topo-usuario">
+            <span class="avatar avatar-pequeno" id="topo-avatar" aria-hidden="true"></span>
+            <span id="topo-nome"></span>
+          </span>
+          <button class="botao botao-secundario botao-sair" type="button" data-acao="sair">Sair</button>
+        </div>
+      </header>
+
+      <main class="conteudo">
+        <section id="vista-painel" class="vista" hidden></section>
+        <section id="vista-vendas" class="vista" hidden></section>
+        <section id="vista-venda" class="vista" hidden></section>
+        <section id="vista-parcelas" class="vista" hidden></section>
+        <section id="vista-historico" class="vista" hidden></section>
+      </main>
+    </div>
+
+    <nav class="menu-inferior" aria-label="Menu">
+      <a href="#/painel" data-rota="painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z"/></svg><span>Painel</span></a>
+      <a href="#/vendas" data-rota="vendas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.5 12 3l9 6.5V21H3z"/><path d="M9 21v-7h6v7"/></svg><span>Vendas</span></a>
+      <a href="#/parcelas" data-rota="parcelas"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg><span>Parcelas</span></a>
+      <a href="#/historico" data-rota="historico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Histórico</span></a>
+    </nav>
+  </div>
+
+  <!-- ───────── Modal genérico ───────── -->
+  <div id="modal" class="modal" hidden>
+    <div class="modal-fundo" data-acao="fechar-modal"></div>
+    <div class="modal-caixa" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+      <header class="modal-topo">
+        <h2 id="modal-titulo"></h2>
+        <button class="botao-icone" type="button" data-acao="fechar-modal" aria-label="Fechar">✕</button>
+      </header>
+      <div id="modal-corpo" class="modal-corpo"></div>
+    </div>
+  </div>
+
+  <!-- Confirmação (fica por cima do modal) -->
+  <div id="dialogo-confirma" class="modal modal-confirma" hidden>
+    <div class="modal-fundo"></div>
+    <div class="modal-caixa" role="alertdialog" aria-modal="true"></div>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/vendas.js"></script>
+  <script src="js/parcelas.js"></script>
+  <script src="js/historico.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

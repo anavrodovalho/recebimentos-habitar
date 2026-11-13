@@ -1,0 +1,11 @@
+# Capturas de tela dos testes locais e arquivos do Playwright
+tests/capturas/
+.playwright-mcp/
+
+# Sistema
+.DS_Store
+Thumbs.db
+node_modules/
+
+# Roteiro original do projeto (fica só local)
+Prompt_VSCode_Sistema_Recebimentos_Habitar.md
