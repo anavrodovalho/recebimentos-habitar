@@ -267,7 +267,7 @@ select.campo { appearance: auto; }
 .topo-acoes { display: flex; align-items: center; gap: 10px; }
 .topo-usuario { display: none; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; }
 .botao-sair { display: none; }
-.conteudo { padding: 24px max(28px, var(--sa-right)) calc(40px + var(--sa-bottom)) 28px; max-width: 1280px; width: 100%; }
+.conteudo { padding: 24px max(28px, var(--sa-right)) calc(40px + var(--sa-bottom)) 28px; max-width: 2200px; width: 100%; }
 .menu-inferior { display: none; }
 
 /* ───────────── Cartões, cards de resumo ───────────── */
@@ -322,7 +322,7 @@ select.campo { appearance: auto; }
 .paginacao .botoes-linha .botao { min-height: 34px; padding: 6px 12px; }
 
 /* ───────────── Painel ───────────── */
-.painel-grade { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+.painel-grade { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .painel-grade > *, .detalhe-grade > *, .cartao, .card-numero { min-width: 0; }
 .painel-grade .cartao + .cartao { margin-top: 0; }
 .grafico { width: 100%; height: auto; display: block; }
@@ -539,3 +539,49 @@ select.campo { appearance: auto; }
 /* Menu lateral pode rolar em telas baixas, mas sem barra visível. */
 .menu { scrollbar-width: none; }
 .menu::-webkit-scrollbar { display: none; }
+
+/* ───────────── Painel: painéis complementares ───────────── */
+.grafico-caixa { width: 100%; min-height: 230px; }
+.painel-extras { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 16px; align-items: stretch; }
+.painel-extras .cartao + .cartao { margin-top: 0; }
+.cartao-extra { display: flex; flex-direction: column; }
+.link-pequeno { font-size: 13px; font-weight: 500; white-space: nowrap; }
+.destaque-extra { margin: 0 0 12px; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--texto); }
+.destaque-extra small { font-size: 13px; font-weight: 500; color: var(--texto-2); }
+.lista-extra { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.lista-extra li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; }
+.lista-extra .rotulo-linha { font-size: 14px; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.lista-extra .rotulo-linha small, .lista-extra .valor-linha small { display: block; font-size: 12px; font-weight: 400; color: var(--texto-2); }
+.lista-extra .valor-linha { font-size: 14px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Carteira: barra 100% empilhada, 2 px de espaço entre segmentos, pontas arredondadas */
+.barra-empilhada { display: flex; gap: 2px; height: 14px; border-radius: 999px; overflow: hidden; margin-bottom: 16px; background: var(--neutro-fundo); }
+.barra-empilhada span { min-width: 4px; }
+.seg-atrasado { background: var(--vermelho); }
+.seg-breve { background: var(--ambar); }
+.seg-vencer { background: var(--azul); }
+.lista-extra li:has(.marca) { grid-template-columns: auto minmax(0, 1fr) auto; }
+.marca { width: 22px; height: 22px; border-radius: 6px; color: #fff; font-size: 12px; font-weight: 700; display: inline-grid; place-items: center; }
+
+/* Progresso por venda */
+.lista-progresso { gap: 14px; }
+.progresso-item { grid-template-columns: minmax(0, 1fr) auto !important; }
+.progresso-nome { font-size: 14px; font-weight: 600; color: var(--texto); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.progresso-nome .pilula { margin-left: 4px; vertical-align: 1px; font-size: 11px; padding: 1px 7px; }
+.progresso-pct { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--texto-2); }
+.progresso-fino { grid-column: 1 / -1; height: 8px; margin: 0; }
+.progresso-sub { grid-column: 1 / -1; font-size: 12px; color: var(--texto-2); font-variant-numeric: tabular-nums; }
+
+/* Barras horizontais (forma de pagamento, corretor) */
+.lista-barras .trilho { grid-column: 1 / -1; height: 8px; border-radius: 999px; background: var(--neutro-fundo); overflow: hidden; }
+.lista-barras .trilho > span { display: block; height: 100%; border-radius: 999px; }
+.barra-recebido-h { background: var(--grafico-recebido); }
+.barra-previsto-h { background: var(--grafico-previsto); }
+
+@media (max-width: 1500px) {
+  .painel-extras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 768px) {
+  .painel-extras { grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 12px; }
+  .destaque-extra { font-size: 19px; }
+}
